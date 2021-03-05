@@ -25,7 +25,6 @@ def extract_bom_data(csvfile):
                 Rdf.columns = Rdf.columns.str.lower()
                 Rdf.columns = Rdf.columns.str.strip()
                 Rdf.rename(columns={"pn": "mpn_or_sku"}, inplace=True)
-
                 colnames = Rdf.columns
 
                 Rlist = []
@@ -59,22 +58,37 @@ def extract_bom_data(csvfile):
     temp = pd.DataFrame(Rlist, columns=colnames)
     Rdf = pd.concat([temp, Rdf])
     Rdf = Rdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
+    Rdf['reference'] = Rdf["mpn_or_sku"]
+    Rdf["limit"] = 3
+    Rdf["start"] = 0
 
     temp = pd.DataFrame(Clist, columns=colnames)
     Cdf = pd.concat([temp, Cdf])
     Cdf = Cdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
+    Cdf['reference'] = Rdf["mpn_or_sku"]
+    Cdf["limit"] = 3
+    Cdf["start"] = 0
 
     temp = pd.DataFrame(Dlist, columns=colnames)
     Ddf = pd.concat([temp, Ddf])
     Ddf = Ddf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
+    Ddf['reference'] = Rdf["mpn_or_sku"]
+    Ddf["limit"] = 3
+    Ddf["start"] = 0
 
     temp = pd.DataFrame(FBlist, columns=colnames)
     FBdf = pd.concat([temp, FBdf])
     FBdf = FBdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
+    FBdf['reference'] = Rdf["mpn_or_sku"]
+    FBdf["limit"] = 3
+    FBdf["start"] = 0
 
     temp = pd.DataFrame(Llist, columns=colnames)
     Ldf = pd.concat([temp, Ldf])
     Ldf = Ldf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
+    Ldf['reference'] = Rdf["mpn_or_sku"]
+    Ldf["limit"] = 3
+    Ldf["start"] = 0
 
     print("Final column names are: ", Ldf.columns)
     return Rdf, Cdf, Ddf, Ldf, FBdf
