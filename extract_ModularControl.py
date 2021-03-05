@@ -1,23 +1,13 @@
 import csv
 import pandas as pd
 import requests
+
 desired_width = 320
 
 pd.set_option('display.width', desired_width)
 pd.set_option('display.max_columns', 10)
 pd.set_option('display.max_colwidth', None)
 
-headers = {"Authorization" : "Bearer YOUR API KEY"}
-
-def run_query(query):  # S simple function to use requests.post to make the API call. Note the json= section.
-    request = requests.post(a0445964-9763-4f8f-b9b2-11b51902237e, json={'query': query}, headers=headers)
-    if request.status_code == 200:
-        print("success")
-        return request.json()
-    else:
-        raise Exception("Query failed to run by returning code of {}. {}".format(request.status_code, query))
-
-    # The GraphQL query (with a few additional bits included) itself defined as a multi-line string.
 
 # important values: R, C, D, FB, L
 def extract_bom_data(csvfile):
@@ -28,12 +18,16 @@ def extract_bom_data(csvfile):
         for row in csv_reader:
             # print('csv: ', row)
             if line_count == 0:
-                print(f'Column names are: {", ".join(row[1:])}')
-                headers = row[1:]
-                Rdf = pd.DataFrame(columns=headers)  # shared attributes via the BOM
+                print(f'Column names are: {", ".join(row)}')
+                colnames = row
+                print(colnames)
+                Rdf = pd.DataFrame(columns=colnames)  # shared attributes via the BOM
+                Rdf.columns = Rdf.columns.str.lower()
                 Rdf.columns = Rdf.columns.str.strip()
-                headers = Rdf.columns
-                print(Rdf.columns)
+                Rdf.rename(columns={"pn": "mpn_or_sku"}, inplace=True)
+
+                colnames = Rdf.columns
+
                 Rlist = []
                 Cdf = Rdf.copy(deep=True)  # capacitors
                 Clist = []
@@ -46,43 +40,53 @@ def extract_bom_data(csvfile):
                 line_count += 1
 
             elif row[0][0] == 'R':
-                Rlist.append(row[1:])
+                Rlist.append(row)
             elif row[0][0] == 'C':
-                Clist.append(row[1:])
+                Clist.append(row)
             elif row[0][0] == 'D':
-                Dlist.append(row[1:])
+                Dlist.append(row)
             elif row[0][0:2] == 'FB':
-                FBlist.append(row[1:])
+                FBlist.append(row)
             elif row[0][0] == 'L':
-                Llist.append(row[1:])
+                Llist.append(row)
 
             line_count += 1
 
         parts_raw.close()
     # print(Rdf.shape)
-    bomdata = 'ModularControlPCBA'
-    extract_bom_data(bomdata)
-    temp = pd.DataFrame(Rlist, columns=headers)
+
+    print(colnames)
+    temp = pd.DataFrame(Rlist, columns=colnames)
     Rdf = pd.concat([temp, Rdf])
+    Rdf = Rdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
 
-    temp = pd.DataFrame(Clist, columns=headers)
+    temp = pd.DataFrame(Clist, columns=colnames)
     Cdf = pd.concat([temp, Cdf])
+    Cdf = Cdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
 
-    temp = pd.DataFrame(Dlist, columns=headers)
+    temp = pd.DataFrame(Dlist, columns=colnames)
     Ddf = pd.concat([temp, Ddf])
+    Ddf = Ddf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
 
-    temp = pd.DataFrame(FBlist, columns=headers)
+    temp = pd.DataFrame(FBlist, columns=colnames)
     FBdf = pd.concat([temp, FBdf])
+    FBdf = FBdf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
 
-    temp = pd.DataFrame(Llist, columns=headers)
+    temp = pd.DataFrame(Llist, columns=colnames)
     Ldf = pd.concat([temp, Ldf])
-    del temp
+    Ldf = Ldf.drop(columns=['quantity', 'footprint', 'value', 'dnp', 'reference', 'datasheet'])
 
-    print('R\n', Rdf)
-    print('C\n', Cdf)
-    print('D\n', Ddf)
-    print('FB\n', FBdf)
-    print('L\n', Ldf)
+    print("Final column names are: ", Ldf.columns)
+    return Rdf, Cdf, Ddf, Ldf, FBdf
+
+
+# bomdata = 'ModularControlPCBA.csv'
+# Rdf, Cdf, Ddf, Ldf, FBdf = extract_bom_data(bomdata)
+# print('R\n', Rdf)
+# print('C\n', Cdf)
+# print('D\n', Ddf)
+# print('FB\n', FBdf)
+# print('L\n', Ldf)
 
 
 print('Hello Octopart!')
