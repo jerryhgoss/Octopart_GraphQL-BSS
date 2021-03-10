@@ -5,6 +5,7 @@ import urllib3
 import time
 import json
 from extract_ModularControl import pd, desired_width
+from pprint import pprint
 
 """ The valuable data to run into Octopart are the part number and the manufacturer.
 Might want to delete the erroneous information from the dataframe extraction. 
@@ -363,13 +364,16 @@ raw_output = """
 graphql_output_sample = json.loads(raw_output)
 desired_attributes = ['Voltage Rating', 'Case/Package', 'Capacitance', 'Dielectric',
                       'Tolerance', 'Power Rating', 'Resistance']
-partdata = dict()
+octopartdata = dict()
 partlist = graphql_output_sample['data']['multi_match']
+# print(partlist[0]['reference'])
 for item in range(len(partlist)):
-    partdata[item] = partlist[item]['parts'][0]['specs']
-    print(type(partdata[item]))
-    df_json = pd.json_normalize(partdata[item])
-    print(df_json.shape, type(df_json))
+    ref_mpn = partlist[item]['reference']
+    octopartdata[ref_mpn] = partlist[item]['parts'][0]['specs']
+    df_json = pd.json_normalize(octopartdata[ref_mpn])
+    # print(df_json.shape, type(df_json), df_json)
     df_json = df_json[df_json['attribute.name'].isin(desired_attributes)].reset_index(drop=True)
-    print(df_json)
+    octopartdata[ref_mpn] = df_json
+
+pprint(octopartdata)
 print("time elapsed: {:.4f}s".format(time.time() - start_time))

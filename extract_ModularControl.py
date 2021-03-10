@@ -48,9 +48,7 @@ def extract_bom_data(csvfile):
                 FBlist.append(row)
             elif row[0][0] == 'L':
                 Llist.append(row)
-
             line_count += 1
-
         parts_raw.close()
     # print(Rdf.shape)
 
