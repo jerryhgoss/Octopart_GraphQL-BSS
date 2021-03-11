@@ -27,38 +27,46 @@ with open('temp.csv', 'r') as tempfile:
             Cschemdata.loc[len(Cschemdata)] = row
     tempfile.close()
 
+R_recov_attr = None
+C_recov_attr = None
+while (R_recov_attr is None) or (C_recov_attr is None):
+    for key in octopartdata.keys():
+        key_attr_list = list(octopartdata[key]['attribute.name'])
+        if 'Resistance' in key_attr_list and R_recov_attr is None:
+            R_recov_attr = key_attr_list
+        elif 'Capacitance' in key_attr_list and C_recov_attr is None:
+            C_recov_attr = key_attr_list
 
-# schem_data = pd.read_csv('temp.csv')
+del key_attr_list
+
+print("\n\n\n\n", "STEP 1 - LISTED ATTRIBUTES TO ADD", "\n\n\n\n\n")
+print('RESISTORS', R_recov_attr, sep='\n')
+print('CAPACITORS', C_recov_attr)
+
 Rschemdata.fillna('', inplace=True)
-# print((list(octopartdata.values())[0]['attribute.name']))
-recov_attr = list(octopartdata.values())[1]['attribute.name']
-# print('Recovered Attributes: \n', recov_attr, sep='')
-for k in recov_attr:
+R_recov_attr = list(octopartdata.values())[1]['attribute.name']
+for k in R_recov_attr:
     Rschemdata[k] = None
-# print(Rschemdata)
 for i in Rschemdata.index:
     if Rschemdata.iloc[i].PN in list(octopartdata.keys()):
-        # print(list(octopartdata.keys()))
-        Rschemdata[recov_attr] = list(octopartdata.values())[0]['display_value']
-        print(Rschemdata)
-        pass
+        Rschemdata.loc[i][R_recov_attr] = list(octopartdata[Rschemdata.iloc[i].PN]['display_value'])
+        # print(Rschemdata[recov_attr])
+print(Rschemdata.head())
 
+pprint(octopartdata.keys())
 
 Cschemdata.fillna('', inplace=True)
-# print((list(octopartdata.values())[0]['attribute.name']))
-recov_attr = list(octopartdata.values())[0]['attribute.name']
-# print('Recovered Attributes: \n', recov_attr, sep='')
-for k in recov_attr:
+C_recov_attr = list(octopartdata.values())[0]['attribute.name']
+for k in C_recov_attr:
     Cschemdata[k] = None
-# print(Cschemdata)
 for i in Cschemdata.index:
     if Cschemdata.iloc[i].PN in list(octopartdata.keys()):
-        # print(list(octopartdata.keys()))
-        Cschemdata[recov_attr] = list(octopartdata.values())[0]['display_value']
-        # print(Cschemdata)
-        pass
-# for i in Rschemdata.index:
-#     Manf = Rschemdata.iloc[i].Manufacturer
-#     PN = Rschemdata.iloc[i].PN
-#     # print(Manf, PN, end=',,')
-#     pass
+        Cschemdata.loc[i][C_recov_attr] = list(octopartdata[Cschemdata.iloc[i].PN]['display_value'])
+        # print(Cschemdata[recov_attr])
+print(Cschemdata.head())
+
+# # for i in Rschemdata.index:
+# #     Manf = Rschemdata.iloc[i].Manufacturer
+# #     PN = Rschemdata.iloc[i].PN
+# #     # print(Manf, PN, end=',,')
+# #     pass
