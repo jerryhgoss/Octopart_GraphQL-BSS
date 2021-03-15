@@ -1,12 +1,11 @@
-import extract_ModularControl
+import extract_csv
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import urllib3
 import time
 import json
-from extract_ModularControl import pd, desired_width
+from extract_csv import pd, desired_width
 from pprint import pprint
-import pickle
 
 """ The valuable data to run into Octopart are the part number and the manufacturer.
 Might want to delete the erroneous information from the dataframe extraction. 
@@ -43,7 +42,7 @@ client = Client(
 )
 
 target_csvfile = 'ModularControlPCBA.csv'
-Rdf, Cdf, Ddf, Ldf, FBdf = extract_ModularControl.extract_bom_data(target_csvfile)
+Rdf, Cdf, Ddf, Ldf, FBdf = extract_csv.extract_bom_data(target_csvfile)
 
 # parts_df = pd.concat([Rdf, Cdf, Ldf, FBdf, Ddf], axis=0, ignore_index=True)
 # parts_df = Rdf.append([Cdf, Ldf, Ddf, FBdf]) # append is faster in this scenario
@@ -364,12 +363,22 @@ raw_output_sample = """
   }
 }"""
 
-graphql_output = json.loads(raw_output_sample)
-partlist = graphql_output['data']['multi_match']
-# with open('partlist_octopart.obj', 'w'):
-
-# graphql_output = execute(query, query_var)
-# partlist = graphql_output['data']['multi_match']
+print("Would you like to run a new query? y/n (yes will overwrite the previous saved query)")
+print("Leave blank if you would like to run the sample data.")
+resp = input()
+if resp == 'y':
+    graphql_output = execute(query, query_var)
+    partlist = graphql_output['data']['multi_match']
+    with open('partlist.json', 'w') as handle:
+        # json the dict for re-use later
+        json.dump(partlist, handle)
+elif resp == 'n':
+    # load json that was saved earlier
+    partlist = json.loads('partlist.json')
+else:
+    # run sample
+    graphql_output = json.loads(raw_output_sample)
+    partlist = graphql_output['data']['multi_match']
 
 desired_attributes = ['Voltage Rating', 'Case/Package', 'Capacitance', 'Dielectric',
                       'Tolerance', 'Power Rating', 'Resistance']

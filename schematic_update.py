@@ -1,4 +1,4 @@
-from graphQL_input import *
+from graphql_query import *
 import csv
 from argparse import ArgumentParser
 import os
@@ -6,7 +6,8 @@ import os
 """
 This is the main file, run this to execute the program. In order for Kifield to work, 
 this file as well as the csv partlist 'ModularControlPCBA.csv', and the other two support files
-'graphQL_input.py' and 'extract_ModularControl.py' will need to be in the KiCad project directory."""
+'graphql_query.py' and 'extract_csv.py' will need to be in the KiCad project directory.
+"""
 
 
 parser = ArgumentParser(description="This script should update schematics with part attributes")
