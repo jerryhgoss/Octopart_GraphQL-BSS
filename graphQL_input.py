@@ -6,6 +6,7 @@ import time
 import json
 from extract_ModularControl import pd, desired_width
 from pprint import pprint
+import pickle
 
 """ The valuable data to run into Octopart are the part number and the manufacturer.
 Might want to delete the erroneous information from the dataframe extraction. 
@@ -17,11 +18,12 @@ start_time = time.time()
 urllib3.disable_warnings()
 
 pd.set_option('display.width', desired_width)
-pd.set_option('display.max_columns', 10)
+pd.set_option('display.max_columns', 15)
 pd.set_option('display.max_colwidth', None)
 
-def execute(query_input):
-    output = client.execute(query_input)
+
+def execute(query_input, parts):
+    output = client.execute(query_input, variable_values=parts)
     return output
 
 
@@ -51,7 +53,7 @@ print(parts_df.shape)
 part_queries = parts_df.to_json(orient="records", indent=4)
 # print(part_queries, "\n\npart total: {q}".format(q=parts_df.shape[0]))
 
-# query_var = {"queries": part_queries}
+query_var = {"queries": part_queries}
 query = gql(
     """
 query MultiMatch2($queries: [PartMatchQuery!]!) {
@@ -63,11 +65,11 @@ query MultiMatch2($queries: [PartMatchQuery!]!) {
   ) 
   {
     reference
-    hits
+    #hits
     parts {
       id #octopart id
-      name
-      mpn
+      #name
+      #mpn
       specs {
         attribute {
           # id
@@ -75,14 +77,14 @@ query MultiMatch2($queries: [PartMatchQuery!]!) {
         }
         display_value
       }
-      slug
+      #slug
     }
   }
 } 
         
         """)
 
-raw_output = """
+raw_output_sample = """
 {
   "data": {
     "multi_match": [
@@ -361,12 +363,18 @@ raw_output = """
     ]
   }
 }"""
-graphql_output_sample = json.loads(raw_output)
+
+graphql_output = json.loads(raw_output_sample)
+partlist = graphql_output['data']['multi_match']
+# with open('partlist_octopart.obj', 'w'):
+
+# graphql_output = execute(query, query_var)
+# partlist = graphql_output['data']['multi_match']
+
 desired_attributes = ['Voltage Rating', 'Case/Package', 'Capacitance', 'Dielectric',
                       'Tolerance', 'Power Rating', 'Resistance']
+
 octopartdata = dict()
-partlist = graphql_output_sample['data']['multi_match']
-# print(partlist[0]['reference'])
 for item in range(len(partlist)):
     ref_mpn = partlist[item]['reference']
     octopartdata[ref_mpn] = partlist[item]['parts'][0]['specs']
