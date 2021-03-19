@@ -3,82 +3,114 @@ import csv
 from argparse import ArgumentParser
 import os
 
-"""
-This is the main file, run this to execute the program. In order for Kifield to work, 
-this file as well as the csv partlist 'ModularControlPCBA.csv', and the other two support files
-'graphql_query.py' and 'extract_csv.py' will need to be in the KiCad project directory.
-"""
-
 
 parser = ArgumentParser(description="This script should update schematics with part attributes")
 parser.add_argument('-f', '--filename', default='', type=str, help='name of main schematic file')
 args = parser.parse_args()
-args.filename = "ModularControlPCBA.sch"
+# print('List of csv files in this directory: \n\t', defaultfiles)
+# print('\n\tYour response: ', end='')
+# args.filename = input()
+# args.filename = 'ModularControlPCBA.sch'
+print("**************************************", args)
 print('Extracting parts from {}'.format(args.filename))
-os.system("kifield -nb -r -w -x {} -i temp.csv".format(args.filename))
+os.system("kifield -nb -w -r -x {} -i temp.csv".format(args.filename))
 
 with open('ModularControlPCBA.csv', 'r') as tempfile:
-    csv_reader = csv.reader(tempfile, delimiter=',')
+    csv_reader = csv.reader(tempfile)
     line_count = 0
     for row in csv_reader:
-        row = [k.strip() for k in row]
+        row2 = row
         # print(row)
         if line_count == 0:
-            line_count += 1
-            colnames = row
+            colnames = [k.strip() for k in row2]
             Rschemdata = pd.DataFrame(columns=colnames)
             Cschemdata = pd.DataFrame(columns=colnames)
         elif row[0][0] == 'R':
-            Rschemdata.loc[len(Rschemdata)] = row
+            Rschemdata.loc[len(Rschemdata)] = row2
         elif row[0][0] == 'C':
-            Cschemdata.loc[len(Cschemdata)] = row
+            Cschemdata.loc[len(Cschemdata)] = row2
+        line_count += 1
     tempfile.close()
 
-R_recov_attr = None
-C_recov_attr = None
-while (R_recov_attr is None) or (C_recov_attr is None):
-    for key in octopartdata.keys():
+R_recov_attr = []
+C_recov_attr = []
+
+while (len(R_recov_attr) < 4) or (len(C_recov_attr) < 4):
+    for key in list(octopartdata.keys()):
         key_attr_list = list(octopartdata[key]['attribute.name'])
-        if 'Resistance' in key_attr_list and R_recov_attr is None:
+        print(key_attr_list)
+        if 'Resistance' in key_attr_list and len(R_recov_attr) < 4:
             R_recov_attr = key_attr_list
-        elif 'Capacitance' in key_attr_list and C_recov_attr is None:
+            # print(R_recov_attr)
+        elif 'Capacitance' in key_attr_list and len(C_recov_attr) < 4:
             C_recov_attr = key_attr_list
+            # print(C_recov_attr)
+# del key_attr_list
 
-del key_attr_list
-
-print("\n\n\n\n", "STEP 1 - LISTED ATTRIBUTES TO ADD", "\n\n\n\n\n")
-print('RESISTORS', R_recov_attr, sep='\n')
-print('CAPACITORS', C_recov_attr)
+print("\n\n", "STEP 1 - LISTED ATTRIBUTES TO BE ADDED", "\n")
+print('RESISTORS', R_recov_attr, sep='\n', end='\n\n')
+print('CAPACITORS', C_recov_attr, sep='\n', end='\n\n')
 
 Rschemdata.fillna('', inplace=True)
 R_recov_attr = list(octopartdata.values())[1]['attribute.name']
 for k in R_recov_attr:
     Rschemdata[k] = None
-for i in Rschemdata.index:
-    if Rschemdata.iloc[i].PN in list(octopartdata.keys()):
-        Rschemdata.loc[i][R_recov_attr] = list(octopartdata[Rschemdata.iloc[i].PN]['display_value'])
-        # print(Rschemdata[recov_attr])
-print(Rschemdata.head())
-Rschemdata.to_csv('temp2.csv', index=False)
-os.system("kifield -r -nb -w -x temp2.csv -i {}".format(args.filename))
-# pprint(octopartdata.keys())
 
 Cschemdata.fillna('', inplace=True)
 C_recov_attr = list(octopartdata.values())[0]['attribute.name']
 for k in C_recov_attr:
     Cschemdata[k] = None
+
+# drop duplicate columns
+Rschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
+Cschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
+print(*list(Rschemdata.columns), sep='\n', end='\n\n')
+print(*list(Cschemdata.columns), sep='\n', end='\n\n')
+# Rschemdata.rename(columns={'Case/Package': 'Case or Package'}, inplace=True)
+# Cschemdata.rename(columns={'Case/Package': 'Case or Package'}, inplace=True)
+for i in Rschemdata.index:
+    if Rschemdata.iloc[i].PN in list(octopartdata.keys()):
+        # print(Rschemdata[R_recov_attr])
+        # print(type(Rschemdata.loc[i][R_recov_attr]))
+        vals = octopartdata[Rschemdata.iloc[i].PN].set_index('attribute.name')
+        # vals.rename(index={'Case/Package': 'Case or Package'}, inplace=True)
+        # Rschemdata.at[list(R_recov_attr), i] = list(octopartdata[Rschemdata.iloc[i]])
+        # print(Rschemdata.at[list(R_recov_attr), i])
+        # print(Rschemdata.iloc[i].PN)
+        # print(len(vals), len(R_recov_attr))
+        # pprint(vals)
+        for k in vals.index:
+            # print('\n\n', k)
+            # print(Rschemdata.iloc[i].index)
+            # print(vals.loc[k])
+            Rschemdata.loc[i, k] = vals.loc[k, 'display_value']
+        # Rschemdata.loc[i][R_recov_attr] = vals
+        # if octopartdata[Rschemdata.iloc[i].PN]['attribute.name'] == Rschemdata.iloc[i]
+pprint(Rschemdata[['Resistance', 'Tolerance']].head())
+Rschemdata.to_csv('temp2.csv', index=False)
+os.system("kifield -r -nb -w -x temp2.csv -i {}".format(args.filename))
+print("Verify that these all columns are present:\n", *list(Rschemdata.columns),
+      sep="\n\t", end="\n")
+
+
 for i in Cschemdata.index:
     if Cschemdata.iloc[i].PN in list(octopartdata.keys()):
-        Cschemdata.loc[i][C_recov_attr] = list(octopartdata[Cschemdata.iloc[i].PN]['display_value'])
-        # print(Cschemdata[recov_attr])
-print('\n', Cschemdata.head(), '\n')
+        # print(Cschemdata[C_recov_attr])
+        # Cschemdata.loc[i][C_recov_attr] = list(octopartdata[Cschemdata.iloc[i]]['display_value'])
+        # Cschemdata.at['display_value', i] = octopartdata[Cschemdata.iloc[i]]['display_value']
+
+        vals = octopartdata[Cschemdata.iloc[i].PN].set_index('attribute.name')
+        # vals.rename(index={'Case/Package': 'Case or Package'}, inplace=True)
+
+        for k in vals.index:
+            Cschemdata.loc[i, k] = vals.loc[k, 'display_value']
+print("Verify that these all columns are present\n", *list(Cschemdata.columns),
+      sep="\n\t", end="\n")
+
+pprint(Cschemdata[['Capacitance', 'Dielectric']].head())
 Cschemdata.to_csv('temp3.csv', index=False)
 os.system("kifield -r -nb -w -x temp3.csv -i {}".format(args.filename))
 print('Cleaning up temporary files')
 os.system('del temp.csv temp2.csv temp3.csv')
 
-# # for i in Rschemdata.index:
-# #     Manf = Rschemdata.iloc[i].Manufacturer
-# #     PN = Rschemdata.iloc[i].PN
-# #     # print(Manf, PN, end=',,')
-# #     pass
+print("time elapsed: {:.4f}s".format(time.time() - start_time))

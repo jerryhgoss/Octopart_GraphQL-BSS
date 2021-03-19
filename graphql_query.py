@@ -1,11 +1,12 @@
-import extract_csv
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import urllib3
+import requests
 import time
 import json
-from extract_csv import pd, desired_width
-from pprint import pprint
+import sys
+# from extract_csv import pd, desired_width
+from extract_csv import *
 
 """ The valuable data to run into Octopart are the part number and the manufacturer.
 Might want to delete the erroneous information from the dataframe extraction. 
@@ -21,19 +22,22 @@ pd.set_option('display.max_columns', 15)
 pd.set_option('display.max_colwidth', None)
 
 
-def execute(query_input, parts):
+def execute(query_input, parts=None):
     output = client.execute(query_input, variable_values=parts)
     return output
 
 
+token = 'a0445964-9763-4f8f-b9b2-11b51902237e'
 # update to octopart api link with token
 sample_transport = RequestsHTTPTransport(
-    url='https://rickandmortyapi.com/graphql',
+    url='https://octopart.com/api/v4/endpoint?token=a0445964-9763-4f8f-b9b2-11b51902237e',
     use_json=True,
     headers={
         "Content-type": "application/json",
+        # "Authorization": f"token {token}",
     },
-    verify=False,
+    verify=True,
+    retries=3,
 )
 
 client = Client(
@@ -41,18 +45,9 @@ client = Client(
     fetch_schema_from_transport=True
 )
 
-target_csvfile = 'ModularControlPCBA.csv'
-Rdf, Cdf, Ddf, Ldf, FBdf = extract_csv.extract_bom_data(target_csvfile)
+part_queries = parts_df.to_dict(orient="records")
+query_var = {"queries": part_queries}  # here's the dict
 
-# parts_df = pd.concat([Rdf, Cdf, Ldf, FBdf, Ddf], axis=0, ignore_index=True)
-# parts_df = Rdf.append([Cdf, Ldf, Ddf, FBdf]) # append is faster in this scenario
-parts_df = Rdf.append([Cdf])
-
-print(parts_df.shape)
-part_queries = parts_df.to_json(orient="records", indent=4)
-# print(part_queries, "\n\npart total: {q}".format(q=parts_df.shape[0]))
-
-query_var = {"queries": part_queries}
 query = gql(
     """
 query MultiMatch2($queries: [PartMatchQuery!]!) {
@@ -82,6 +77,33 @@ query MultiMatch2($queries: [PartMatchQuery!]!) {
 } 
         
         """)
+query4 = """
+query ($queries: [PartMatchQuery!]!) {
+  multi_match(
+    queries: $queries
+    country: "US"
+    currency: "USD"
+    distributorapi_timeout: "3s"
+  ) 
+  {
+    reference
+    #hits
+    parts {
+      id #octopart id
+      #name
+      #mpn
+      specs {
+        attribute {
+          # id
+          name
+        }
+        display_value
+      }
+      #slug
+    }
+  }
+} 
+        """  # this is for the external query_test.py file
 
 raw_output_sample = """
 {
@@ -363,20 +385,27 @@ raw_output_sample = """
   }
 }"""
 
-print("Would you like to run a new query? y/n (yes will overwrite the previous saved query)")
+print("\n\nWould you like to run a new query? y/n (yes will overwrite the previous saved query)")
 print("Leave blank if you would like to run the sample data.")
+print('\n\tYour response: ', end='')
 resp = input()
 if resp == 'y':
     graphql_output = execute(query, query_var)
-    partlist = graphql_output['data']['multi_match']
-    with open('partlist.json', 'w') as handle:
+    partlist = graphql_output['multi_match']
+    with open('partlist_file.json', 'w') as handle:
         # json the dict for re-use later
         json.dump(partlist, handle)
 elif resp == 'n':
     # load json that was saved earlier
-    partlist = json.loads('partlist.json')
+    try:
+        with open('partlist_file.json', 'r') as handle:
+            partlist = json.load(handle)
+            print('successfully read json file')
+    except json.decoder.JSONDecodeError:
+        print("String could not be converted to json")
 else:
     # run sample
+    print('Sample Data')
     graphql_output = json.loads(raw_output_sample)
     partlist = graphql_output['data']['multi_match']
 
@@ -384,13 +413,45 @@ desired_attributes = ['Voltage Rating', 'Case/Package', 'Capacitance', 'Dielectr
                       'Tolerance', 'Power Rating', 'Resistance']
 
 octopartdata = dict()
-for item in range(len(partlist)):
-    ref_mpn = partlist[item]['reference']
-    octopartdata[ref_mpn] = partlist[item]['parts'][0]['specs']
-    df_json = pd.json_normalize(octopartdata[ref_mpn])
-    # print(df_json.shape, type(df_json), df_json)
-    df_json = df_json[df_json['attribute.name'].isin(desired_attributes)].reset_index(drop=True)
-    octopartdata[ref_mpn] = df_json
+# print(partlist[34:41])
+# print(partlist[33:35]['parts'])
 
-pprint(octopartdata)
-print("time elapsed: {:.4f}s".format(time.time() - start_time))
+# print(len(partlist), len(parts_df), partlist)
+failure_list = []
+k = 0
+for item in range(len(partlist) - 1):
+    ref_mpn = partlist[item]['reference']
+    # print(ref_mpn)
+    # print(item)
+
+    try:
+        octopartdata[ref_mpn] = partlist[item]['parts'][0]['specs']
+        df_json = pd.json_normalize(octopartdata[ref_mpn])
+        # print(df_json.shape, type(df_json), df_json)
+        if isinstance(df_json, pd.DataFrame):
+            df_json = df_json[df_json['attribute.name'].isin(desired_attributes)].reset_index(drop=True)
+            octopartdata[ref_mpn] = df_json
+        # print(type(octopartdata[ref_mpn]['attribute.name']))
+    except (IndexError, KeyError):
+        print(f'\npart {item + 1} out of {len(partlist)} total parts not extracted',
+              'properly/has odd file structure/missing standard dictionary keys.',
+              f'\nFailed part reference/PN is {ref_mpn}')
+        print(sys.exc_info()[0])
+        k = k+1
+        failure_list.append(ref_mpn)
+        pass
+    if ref_mpn in failure_list:
+        try:
+            del octopartdata[ref_mpn]
+        except KeyError:
+            pass
+
+
+# pprint(type(k['attribute.name'] for k in octopartdata.values()))
+print('\nOctopart dictionary data length is', len(octopartdata), 'and data query length is', len(partlist))
+if len(octopartdata) == len(partlist):
+    print("All extracted octopart data was formatted successfully.")
+else:
+    print(f"A total of {k} part(s) experienced difficulty being added.",
+          "\nManually attend to the specified references:\n")
+    print(*failure_list, sep=", \t")
