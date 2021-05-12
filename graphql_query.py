@@ -8,6 +8,7 @@ import sys
 # from extract_csv import pd, desired_width
 from extract_csv import *
 
+octopart_token = None
 """ The valuable data to run into Octopart are the part number and the manufacturer.
 Might want to delete the erroneous information from the dataframe extraction. 
 Constant values for the limit and the start values.
@@ -27,9 +28,13 @@ def execute(query_input, parts=None):
     return output
 
 
-with open('octopart-token.txt', 'r') as token_file:
-    octopart_token = token_file.read()
-    print(octopart_token)
+if os.path.exists('octopart-token.txt'):
+    with open('octopart-token.txt', 'r') as token_file:
+        octopart_token = token_file.read().splitlines()[0]
+        print(repr(octopart_token))
+else:
+    print("You do not have an octopart_token.txt file. Please type your token as 'token=.....>")
+    octopart_token = input()
 
 # update to octopart api link with token
 sample_transport = RequestsHTTPTransport(
