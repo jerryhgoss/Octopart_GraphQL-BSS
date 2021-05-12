@@ -2,7 +2,16 @@ import csv
 import pandas as pd
 from pprint import pprint
 import glob
+from argparse import ArgumentParser
+import os
 
+
+parser = ArgumentParser(description="This script should update schematics with part attributes")
+parser.add_argument('-f', '--filename', default='', type=str, help='name of main schematic file')
+args = parser.parse_args()
+print("**************************************", args)
+print('Extracting parts from {}'.format(args.filename))
+os.system("kifield -nb -w -r -g -x {} -i temp.csv".format(args.filename))
 desired_width = 320
 
 pd.set_option('display.width', desired_width)
@@ -114,14 +123,15 @@ intro = """
 In order for this program to work properly, the following files must be in your
 KiCad project directory and they must be run from there as well.
 
-'ModularControlPCBA.csv' is a BOM file that can be generated in eschema and
-may share the name of your project directory.
-
 Files:
 \t'schematic_update.py',
 \t'ModularControlPCBA.csv', 
 \t'graphql_query.py' 
 \t'extract_csv.py'.
+
+'ModularControlPCBA.csv' is a BOM file that can be generated in eschema and
+may share the name of your project directory  and would appear as <KIPRJNAME>.csv
+
 """
 
 print('\nHello Octopart user! This program will let you pick a csv BOM file, extract',
@@ -133,14 +143,16 @@ print('\nHello Octopart user! This program will let you pick a csv BOM file, ext
 print(intro)
 
 print("What is the csv that you would like to extract part data from? Leave",
-      "blank to use the first csv file listed below.")
+      "blank to use the first temp.csv file listed below (recommended).")
 defaultfiles = glob.glob("*.csv")
 print('List of csv files in this directory: \n\t', defaultfiles)
 print('\n\tYour response: ', end='')
-target_csvfile = input()
+# target_csvfile = input()
+# if target_csvfile == '':
+target_csvfile = 'temp.csv'
 if target_csvfile == '':
     target_csvfile = defaultfiles[0]
-print('\n', target_csvfile, 'will be used.')
+print('\n\t\t', target_csvfile, 'will be used.')
 
 # Rdf, Cdf, Ddf, Ldf, FBdf = extract_csv.extract_bom_data(target_csvfile)
 Rdf, Cdf, Ddf, Ldf, FBdf = extract_bom_data(target_csvfile)

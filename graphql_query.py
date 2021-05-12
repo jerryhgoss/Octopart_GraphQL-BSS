@@ -27,10 +27,13 @@ def execute(query_input, parts=None):
     return output
 
 
-token = 'a0445964-9763-4f8f-b9b2-11b51902237e'
+with open('octopart-token.txt', 'r') as token_file:
+    octopart_token = token_file.read()
+    print(octopart_token)
+
 # update to octopart api link with token
 sample_transport = RequestsHTTPTransport(
-    url='https://octopart.com/api/v4/endpoint?token=a0445964-9763-4f8f-b9b2-11b51902237e',
+    url='https://octopart.com/api/v4/endpoint?' + octopart_token,
     use_json=True,
     headers={
         "Content-type": "application/json",
@@ -437,7 +440,7 @@ for item in range(len(partlist) - 1):
               'properly/has odd file structure/missing standard dictionary keys.',
               f'\nFailed part reference/PN is {ref_mpn}')
         print(sys.exc_info()[0])
-        k = k+1
+        k = k + 1
         failure_list.append(ref_mpn)
         pass
     if ref_mpn in failure_list:
@@ -445,7 +448,6 @@ for item in range(len(partlist) - 1):
             del octopartdata[ref_mpn]
         except KeyError:
             pass
-
 
 # pprint(type(k['attribute.name'] for k in octopartdata.values()))
 print('\nOctopart dictionary data length is', len(octopartdata), 'and data query length is', len(partlist))

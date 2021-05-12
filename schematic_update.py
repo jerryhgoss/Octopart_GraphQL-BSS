@@ -1,21 +1,8 @@
 from graphql_query import *
 import csv
-from argparse import ArgumentParser
-import os
 
 
-parser = ArgumentParser(description="This script should update schematics with part attributes")
-parser.add_argument('-f', '--filename', default='', type=str, help='name of main schematic file')
-args = parser.parse_args()
-# print('List of csv files in this directory: \n\t', defaultfiles)
-# print('\n\tYour response: ', end='')
-# args.filename = input()
-# args.filename = 'ModularControlPCBA.sch'
-print("**************************************", args)
-print('Extracting parts from {}'.format(args.filename))
-os.system("kifield -nb -w -r -x {} -i temp.csv".format(args.filename))
-
-with open('ModularControlPCBA.csv', 'r') as tempfile:
+with open('temp.csv', 'r') as tempfile:
     csv_reader = csv.reader(tempfile)
     line_count = 0
     for row in csv_reader:
@@ -62,8 +49,8 @@ for k in C_recov_attr:
     Cschemdata[k] = None
 
 # drop duplicate columns
-Rschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
-Cschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
+# Rschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
+# Cschemdata.drop(columns=['Quantity', 'Value', 'Footprint', 'Datasheet'], inplace=True)
 print(*list(Rschemdata.columns), sep='\n', end='\n\n')
 print(*list(Cschemdata.columns), sep='\n', end='\n\n')
 # Rschemdata.rename(columns={'Case/Package': 'Case or Package'}, inplace=True)
