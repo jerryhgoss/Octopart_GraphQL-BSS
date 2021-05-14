@@ -11,7 +11,7 @@ parser.add_argument('-f', '--filename', default='', type=str, help='name of main
 args = parser.parse_args()
 print("**************************************", args)
 print('Extracting parts from {}'.format(args.filename))
-os.system("kifield -nb -w -r -x {} -i temp.csv".format(args.filename))
+os.system("kifield -nb -w -g -r -x {} -i temp.csv".format(args.filename))
 desired_width = 320
 
 pd.set_option('display.width', desired_width)
