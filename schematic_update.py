@@ -25,7 +25,7 @@ C_recov_attr = []
 while (len(R_recov_attr) < 5) or (len(C_recov_attr) < 5):
     for key in list(octopartdata.keys()):
         key_attr_list = list(octopartdata[key]['attribute.name'])
-        print(key_attr_list)
+        # print(key_attr_list)
         if 'Resistance' in key_attr_list and len(R_recov_attr) < 5:
             R_recov_attr = key_attr_list
             # print(R_recov_attr)
@@ -73,7 +73,7 @@ for i in Rschemdata.index:
             Rschemdata.loc[i, k] = vals.loc[k, 'display_value']
         # Rschemdata.loc[i][R_recov_attr] = vals
         # if octopartdata[Rschemdata.iloc[i].PN]['attribute.name'] == Rschemdata.iloc[i]
-pprint(Rschemdata[['Resistance', 'Tolerance']].head())
+pprint(Rschemdata[R_recov_attr].head())
 Rschemdata.to_csv('temp2.csv', index=False)
 os.system("kifield -r -nb -g -w -x temp2.csv -i {}".format(args.filename))
 print("Verify that these all columns are present:\n", *list(Rschemdata.columns),
@@ -94,10 +94,10 @@ for i in Cschemdata.index:
 print("Verify that these all columns are present\n", *list(Cschemdata.columns),
       sep="\n\t", end="\n")
 
-pprint(Cschemdata[['Capacitance', 'Dielectric']].head())
+pprint(Cschemdata[C_recov_attr].head())
 Cschemdata.to_csv('temp3.csv', index=False)
 os.system("kifield -r -nb -w -g -x temp3.csv -i {}".format(args.filename))
 print('Cleaning up temporary files')
-os.system('del temp.csv temp2.csv temp3.csv')
+os.system('rm temp.csv temp2.csv temp3.csv')
 
 print("time elapsed: {:.4f}s".format(time.time() - start_time))
