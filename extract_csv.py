@@ -4,6 +4,7 @@ from pprint import pprint
 import glob
 from argparse import ArgumentParser
 import os
+import time
 
 
 parser = ArgumentParser(description="This script should update schematics with part attributes")
@@ -130,8 +131,7 @@ Files:
 \t'extract_csv.py'.
 
 'ModularControlPCBA.csv' is a BOM file that can be generated in eschema and
-may share the name of your project directory  and would appear as <KIPRJNAME>.csv
-
+may share the name of your project directory and would appear as <KIPRJNAME>.csv
 """
 
 print('\nHello Octopart user! This program will let you pick a csv BOM file, extract',
@@ -141,18 +141,22 @@ print('\nHello Octopart user! This program will let you pick a csv BOM file, ext
       sep='\n')
 
 print(intro)
+time.sleep(3)
 
 print("What is the csv that you would like to extract part data from? Leave",
-      "blank to use the first temp.csv file listed below (recommended).")
+      "blank to use the first .csv file listed below (recommended).")
 defaultfiles = glob.glob("*.csv")
 print('List of csv files in this directory: \n\t', defaultfiles)
 print('\n\tYour response: ', end='')
-# target_csvfile = input()
+target_csvfile = input()
 # if target_csvfile == '':
-target_csvfile = 'temp.csv'
+# target_csvfile = 'temp.csv'
 if target_csvfile == '':
     target_csvfile = defaultfiles[0]
+elif target_csvfile == 't':
+    target_csvfile = 'temp.csv'
 print('\n\t\t', target_csvfile, 'will be used.')
+time.sleep(2)
 
 # Rdf, Cdf, Ddf, Ldf, FBdf = extract_csv.extract_bom_data(target_csvfile)
 Rdf, Cdf, Ddf, Ldf, FBdf = extract_bom_data(target_csvfile)

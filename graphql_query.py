@@ -2,7 +2,6 @@ from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import urllib3
 import requests
-import time
 import json
 import sys
 # from extract_csv import pd, desired_width
