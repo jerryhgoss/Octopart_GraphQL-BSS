@@ -4,18 +4,24 @@ Populate KiCad fields with Octopart component attributes using Octoparts V4 API 
 ## Dependencies and Requirements
 You would need python 3.6 or later. These can be seen in the `requirements.txt` file and should be easily installed with the following command. I recommend doing this on a venv as that will ensure that you're using functional versions and dependencies without interfering with you computer's current setup. 
 
-```pip install requirements.txt```
+```
+pip install requirements.txt
+```
 
 You will also need to install [kifield](https://xess.com/KiField/docs/_build/singlehtml/index.html) which can be installed with the following code.
 
-```pip install kifield```
+```
+pip install kifield
+```
 
 ### Run in command-line interface (CLI)
 This program will update component data in a KiCad schematic or project. Effects can be seen in the symlib table. Selected attributes are collected for resistors and capacitors and the specs are added to the KiCad schematic for reference/review/verification of valid part numbers.
 
 Run the following code in your computer's CLI to execute the program.
 
-```python schematic_update.py -f <KiCadProjectName>.sch```
+```
+python schematic_update.py -f <KiCadProjectName>.sch
+```
 
 If your system requires it, you may have to type `python3` or `pip3`  instead of `python` or `pip` for the program to work. Additional information can be found in the [kifield](https://xess.com/KiField/docs/_build/singlehtml/index.html) documentation as this can be run on a specific schematic file or entire directory. 
 
